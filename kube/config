@@ -1,0 +1,33 @@
+# Kubeconfig template for project-bedrock-cluster
+# Replace ${CLUSTER_ENDPOINT} and ${CLUSTER_CA_DATA} with real values
+# Or run scripts/generate-kubeconfig.sh (Linux/macOS) or
+# scripts\generate-kubeconfig.ps1 (Windows) to create this file automatically.
+
+apiVersion: v1
+clusters:
+- cluster:
+    server: ${CLUSTER_ENDPOINT}
+    certificate-authority-data: ${CLUSTER_CA_DATA}
+  name: project-bedrock-cluster
+contexts:
+- context:
+    cluster: project-bedrock-cluster
+    user: aws
+  name: project-bedrock-cluster
+current-context: project-bedrock-cluster
+kind: Config
+preferences: {}
+users:
+- name: aws
+  user:
+    exec:
+      apiVersion: client.authentication.k8s.io/v1beta1
+      command: aws
+      args:
+        - eks
+        - get-token
+        - --cluster-name
+        - project-bedrock-cluster
+        - --region
+        - us-east-1
+      # If using an older aws cli, change apiVersion to v1alpha1

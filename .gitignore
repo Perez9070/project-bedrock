@@ -1,0 +1,11 @@
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+/.vscode/
+__pycache__/
+lambda/__pycache__
+*.zip
+*.log
+.env
+.aws/
