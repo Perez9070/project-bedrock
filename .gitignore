@@ -2,6 +2,8 @@
 *.tfstate
 *.tfstate.*
 .terraform.lock.hcl
+terraform.tfvars
+crash.log
 /.vscode/
 __pycache__/
 lambda/__pycache__

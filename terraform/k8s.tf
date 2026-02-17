@@ -1,4 +1,4 @@
-# Configure Kubernetes provider from the created EKS cluster
+// Configure Kubernetes provider from the created EKS cluster
 data "aws_eks_cluster" "cluster" {
   name = module.eks.cluster_id
 }
@@ -14,7 +14,7 @@ provider "kubernetes" {
 }
 
 # Namespace
-resource "kubernetes_namespace" "retail_app" {
+resource "kubernetes_namespace_v1" "retail_app" {
   metadata {
     name = "retail-app"
     labels = {
@@ -23,12 +23,12 @@ resource "kubernetes_namespace" "retail_app" {
   }
 }
 
-# UI deployment (placeholder)
+# UI deployment
 resource "kubernetes_deployment" "ui" {
   metadata {
     name      = "ui"
-    namespace = kubernetes_namespace.retail_app.metadata[0].name
-    labels = { app = "retail-ui" }
+    namespace = kubernetes_namespace_v1.retail_app.metadata[0].name
+    labels    = { app = "retail-ui" }
   }
 
   spec {
@@ -55,24 +55,27 @@ resource "kubernetes_deployment" "ui" {
 resource "kubernetes_service" "ui" {
   metadata {
     name      = "ui"
-    namespace = kubernetes_namespace.retail_app.metadata[0].name
+    namespace = kubernetes_namespace_v1.retail_app.metadata[0].name
   }
 
   spec {
     selector = { app = "retail-ui" }
+
     port {
       port        = 80
       target_port = 80
+      protocol    = "TCP"
     }
+
     type = "ClusterIP"
   }
 }
 
-# In-cluster dependencies (minimal pods for grading)
+# MySQL deployment
 resource "kubernetes_deployment" "mysql" {
   metadata {
     name      = "mysql"
-    namespace = kubernetes_namespace.retail_app.metadata[0].name
+    namespace = kubernetes_namespace_v1.retail_app.metadata[0].name
   }
 
   spec {
@@ -83,9 +86,7 @@ resource "kubernetes_deployment" "mysql" {
     }
 
     template {
-      metadata {
-        labels = { app = "mysql" }
-      }
+      metadata { labels = { app = "mysql" } }
 
       spec {
         container {
@@ -102,10 +103,11 @@ resource "kubernetes_deployment" "mysql" {
   }
 }
 
+# Postgres deployment
 resource "kubernetes_deployment" "postgres" {
   metadata {
     name      = "postgres"
-    namespace = kubernetes_namespace.retail_app.metadata[0].name
+    namespace = kubernetes_namespace_v1.retail_app.metadata[0].name
   }
 
   spec {
@@ -116,9 +118,7 @@ resource "kubernetes_deployment" "postgres" {
     }
 
     template {
-      metadata {
-        labels = { app = "postgres" }
-      }
+      metadata { labels = { app = "postgres" } }
 
       spec {
         container {
@@ -135,36 +135,58 @@ resource "kubernetes_deployment" "postgres" {
   }
 }
 
+# Redis deployment
 resource "kubernetes_deployment" "redis" {
-  metadata { name = "redis" namespace = kubernetes_namespace.retail_app.metadata[0].name }
+  metadata {
+    name      = "redis"
+    namespace = kubernetes_namespace_v1.retail_app.metadata[0].name
+  }
+
   spec {
     replicas = 1
     selector { match_labels = { app = "redis" } }
+
     template {
       metadata { labels = { app = "redis" } }
+
       spec {
-        container { name = "redis" image = "redis:6-alpine" port { container_port = 6379 } }
+        container {
+          name  = "redis"
+          image = "redis:6-alpine"
+          port { container_port = 6379 }
+        }
       }
     }
   }
 }
 
+# RabbitMQ deployment
 resource "kubernetes_deployment" "rabbitmq" {
-  metadata { name = "rabbitmq" namespace = kubernetes_namespace.retail_app.metadata[0].name }
+  metadata {
+    name      = "rabbitmq"
+    namespace = kubernetes_namespace_v1.retail_app.metadata[0].name
+  }
+
   spec {
     replicas = 1
     selector { match_labels = { app = "rabbitmq" } }
+
     template {
       metadata { labels = { app = "rabbitmq" } }
+
       spec {
-        container { name = "rabbitmq" image = "rabbitmq:3-management" port { container_port = 5672 } }
+        container {
+          name  = "rabbitmq"
+          image = "rabbitmq:3-management"
+          port { container_port = 5672 }
+        }
       }
     }
   }
 }
 
-# RBAC: bind the IAM-mapped group to view role so bedrock-dev-view can `kubectl get pods -n retail-app` but not delete
-resource "kubernetes_cluster_role_binding" "bedrock_dev_view_binding" {
+# RBAC: bind the IAM-mapped group to view role so bedrock-dev-view can `kubectl get pods -n retail-app`
+resource "kubernetes_cluster_role_binding_v1" "bedrock_dev_view_binding" {
   metadata { name = "bedrock-dev-view-binding" }
 
   role_ref {

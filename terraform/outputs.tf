@@ -36,6 +36,6 @@ output "bedrock_dev_console_password" {
 }
 
 output "bedrock_dev_console_signin_url" {
-  value = "https://console.aws.amazon.com/console/home?region=${var.region}#/signin?account=${data.aws_caller_identity.current.account_id}"
+  value       = "https://console.aws.amazon.com/console/home?region=${var.region}#/signin?account=${data.aws_caller_identity.current.account_id}"
   description = "Sign-in URL for AWS console (use the IAM username and password output above)."
 }

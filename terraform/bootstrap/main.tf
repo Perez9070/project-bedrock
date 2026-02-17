@@ -1,7 +1,3 @@
-provider "aws" {
-  region = var.region
-}
-
 resource "aws_s3_bucket" "tf_state" {
   bucket = "bedrock-terraform-state-alt-soe-025-1334"
   tags = {

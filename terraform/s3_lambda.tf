@@ -8,20 +8,20 @@ resource "aws_s3_bucket" "assets" {
 resource "aws_s3_bucket_acl" "assets_acl" {
   bucket = aws_s3_bucket.assets.id
   acl    = "private"
-} 
+}
 
 # Lambda role
 resource "aws_iam_role" "lambda_exec" {
-  name = "bedrock-asset-processor-role"
+  name               = "bedrock-asset-processor-role"
   assume_role_policy = data.aws_iam_policy_document.lambda_assume.json
-  tags = { Project = "Bedrock" }
+  tags               = { Project = "Bedrock" }
 }
 
 data "aws_iam_policy_document" "lambda_assume" {
   statement {
     actions = ["sts:AssumeRole"]
     principals {
-      type = "Service"
+      type        = "Service"
       identifiers = ["lambda.amazonaws.com"]
     }
   }
@@ -61,8 +61,8 @@ resource "aws_lambda_function" "asset_processor" {
   runtime       = "python3.11"
   role          = aws_iam_role.lambda_exec.arn
   publish       = true
-  tags = { Project = "Bedrock" }
-  depends_on = [aws_iam_role_policy.lambda_logs]
+  tags          = { Project = "Bedrock" }
+  depends_on    = [aws_iam_role_policy.lambda_logs]
 }
 
 resource "aws_lambda_permission" "s3_invoke" {
