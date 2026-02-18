@@ -18,10 +18,10 @@ variable "azs" {
   default = ["us-east-1a", "us-east-1b"]
 }
 
-variable "instance_type" {
-  type    = string
-  default = "t3.micro"
-}
+//variable "instance_type" {
+//type    = string
+//default = "t3.micro"
+//}
 
 variable "assets_bucket_suffix" {
   type    = string

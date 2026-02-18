@@ -5,10 +5,10 @@ resource "aws_s3_bucket" "assets" {
   }
 }
 
-resource "aws_s3_bucket_acl" "assets_acl" {
-  bucket = aws_s3_bucket.assets.id
-  acl    = "private"
-}
+# resource "aws_s3_bucket_acl" "assets_acl" {
+#   bucket = aws_s3_bucket.assets.id
+#   acl    = "private"
+# }
 
 # Lambda role
 resource "aws_iam_role" "lambda_exec" {
