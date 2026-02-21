@@ -17,7 +17,6 @@ module "eks" {
       instance_types = ["t3.small"]
       capacity_type  = "ON_DEMAND"
       disk_size      = 20
-          kubernetes_version = "1.34"
 
       tags = {
         Name    = "default"
@@ -29,8 +28,12 @@ module "eks" {
 
   enable_irsa = true
 
-# cluster_log_types = ["api", "audit", "authenticator"]
- 
+cluster_enabled_log_types = [
+  "api",
+  "audit",
+  "authenticator"
+]
+
   tags = {
     Project = "Bedrock"
   }
