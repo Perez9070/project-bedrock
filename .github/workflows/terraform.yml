@@ -60,12 +60,6 @@ jobs:
         with:
           terraform_version: 1.5.7
 
-      - name: Bootstrap (create remote state)
-        working-directory: terraform/bootstrap
-        run: |
-          terraform init -input=false
-          terraform apply -auto-approve -input=false
-
       - name: Terraform apply (root)
         working-directory: terraform
         run: |
