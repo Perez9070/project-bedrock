@@ -28,12 +28,8 @@ module "eks" {
 
   enable_irsa = true
 
-cluster_enabled_log_types = [
-  "api",
-  "audit",
-  "authenticator"
-]
-
+# cluster_log_types = ["api", "audit", "authenticator"]
+ 
   tags = {
     Project = "Bedrock"
   }
