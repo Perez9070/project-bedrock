@@ -1,0 +1,3 @@
+[submodule "terraform/retail-store-sample-app"]
+  path = terraform/retail-store-sample-app
+  url = https://github.com/aws-containers/retail-store-sample-app.git
