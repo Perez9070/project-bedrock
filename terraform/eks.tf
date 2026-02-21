@@ -2,8 +2,8 @@ module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "~> 21.0" 
 
-  cluster_name    = var.cluster_name
-  cluster_version = "1.34"
+  name    = var.cluster_name
+  kubernetes_version = "1.34"
 
   vpc_id                   = aws_vpc.project_bedrock.id
   subnet_ids               = aws_subnet.private[*].id
@@ -28,13 +28,11 @@ module "eks" {
 
   enable_irsa = true
 
-  cluster_enabled_log_types = [
-    "api",
-    "audit",
-    "authenticator",
-    "controllerManager",
-    "scheduler"
-  ]
+cluster_enabled_log_types = [
+  "api",
+  "audit",
+  "authenticator"
+]
 
   tags = {
     Project = "Bedrock"
