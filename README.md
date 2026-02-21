@@ -1,76 +1,64 @@
-# Project Bedrock — InnovateMart (scaffold)
+Project Bedrock — InnovateMart Scaffold
 
-Summary
-- Purpose: Terraform + EKS infra, retail-app placeholder, S3 → Lambda asset processor, CloudWatch logging, and GitHub Actions CI for plan/apply.
-- Region: `us-east-1`
-- EKS cluster name: `project-bedrock-cluster`
-- VPC tag: `project-bedrock-vpc`
-- Namespace: `retail-app`
-- Developer IAM user: `bedrock-dev-view`
-- Assets bucket: `bedrock-assets-alt-soe-025-1334`
-- Lambda: `bedrock-asset-processor`
-- All resources tagged: `Project = Bedrock`
+This repo sets up the basic infra for a retail app using Terraform + EKS, S3 → Lambda asset processing, and GitHub Actions for CI. Think of it like a starter kit—you can run it, tweak it, and build on top.
 
-# Yo — quick repo notes (what I did and how to run it)
+Region: us-east-1
+EKS cluster: project-bedrock-cluster
+VPC tag: project-bedrock-vpc
+K8s namespace: retail-app
+Developer IAM user: bedrock-dev-view
+Assets bucket: bedrock-assets-alt-soe-025-1334
+Lambda: bedrock-asset-processor
+Tags: Project = Bedrock
 
-Short version
-- This repo sets up infra with Terraform (VPC, EKS, IAM, S3 + Lambda), a tiny placeholder app in Kubernetes under `k8s/`, and a simple Lambda in `lambda/index.py` that logs S3 uploads. There's also a few helper scripts in `scripts/`.
+What’s in here
 
-What lives here
-- Terraform: `terraform/` (including `terraform/bootstrap` for remote state).
-- K8s manifests: `k8s/` (UI + mysql/postgres/redis/rabbitmq placeholders).
-- Lambda: `lambda/index.py` (basic S3 event logger).
-- Scripts: `scripts/` for local helpers like `deploy_local.sh`, `generate-grading-json.sh`, and `generate-kubeconfig.sh`.
+Terraform → terraform/ (including terraform/bootstrap for remote state).
 
-Quick local run (how I run it)
-1) Bootstrap remote state (only if you haven't):
+K8s manifests → k8s/ (super tiny placeholder app + mysql/postgres/redis/rabbitmq stubs).
 
-```bash
+Lambda → lambda/index.py (logs S3 events, nothing fancy).
+
+Scripts → scripts/ (helpers like deploy_local.sh, generate-grading-json.sh, generate-kubeconfig.sh).
+
+How I run this locally
+
+Bootstrap remote state (only if you haven’t done it yet):
+
 cd terraform/bootstrap
 terraform init
 terraform apply -auto-approve
-```
 
-2) From repo root, run the main apply (this will create VPC, EKS, S3, Lambda, IAM etc):
+Run main Terraform apply (this creates VPC, EKS, S3, Lambda, IAM, etc.):
 
-```bash
 cd terraform
 terraform init
 terraform apply -auto-approve -var="assets_bucket_suffix=alt-soe-025-1334"
-```
 
-3) Update kubeconfig and apply k8s manifests (or use `scripts/deploy_local.sh`):
+Update kubeconfig and deploy K8s manifests:
 
-```bash
 aws eks update-kubeconfig --region us-east-1 --name project-bedrock-cluster
 kubectl apply -f k8s/ --recursive
 kubectl get pods -n retail-app
-```
-
-Grading JSON (if you need to generate it locally)
-
-```bash
+Grading JSON (if needed)
 cd terraform
 terraform output -json > ../grading.json
-```
+Important stuff to know
 
-Important notes / gotchas (read this)
-- Don't check in AWS credentials anywhere.
-- The IAM user `bedrock-dev-view` is created with ReadOnly access and a console login is scaffolded; change passwords and rotate creds before sharing.
-- The S3 bucket and terraform backend names include a suffix to avoid collisions; adjust `assets_bucket_suffix` in `terraform/variables.tf` if you want a different name.
-- The lambda package is built from `lambda/` via `data "archive_file"` in Terraform; make sure `lambda/package.zip` is writable by Terraform runs.
+Never check in AWS creds.
 
-What I checked quickly (status)
-- Terraform files: look consistent and ready to run from this repo (backend uses S3 + DynamoDB).
-- Kubernetes manifests and Terraform k8s provider are present and minimal for grading.
-- Lambda `index.py` is a tiny S3-event logger and is OK for the scaffold.
-- Scripts are simple wrappers around `terraform` and `kubectl` — they assume you have the AWS CLI, kubectl, and Terraform installed.
+The IAM user bedrock-dev-view is read-only + console login scaffolded—change passwords and rotate creds before sharing.
 
-If you want me to do this for you
-- I can run `terraform apply` here if you want (you'd need to provide credentials or run with a profile). Or I can walk you through each command while you run them locally.
+S3 bucket + Terraform backend names have a suffix to avoid collisions. Change assets_bucket_suffix in terraform/variables.tf if you want something else.
 
-Next steps I suggest
-- If you're submitting this for grading: run `scripts/generate-grading-json.sh` and commit `grading.json`.
-- If you want extra features (RDS, ALB, ACM), tell me which and I'll add them.
+Lambda package is built from lambda/ via data "archive_file" in Terraform. Make sure lambda/package.zip is writable.
 
-— If you want the tone/names changed to sound more like you, tell me how you usually write and I'll match it.
+Quick status check
+
+Terraform files look clean and ready to run.
+
+K8s manifests are minimal but present.
+
+Lambda is a small S3 event logger, works fine for the scaffold.
+
+Scripts just wrap Terraform and kubectl—make sure you have AWS CLI, kubectl, and Terraform installed.
