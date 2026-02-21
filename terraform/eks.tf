@@ -17,6 +17,7 @@ module "eks" {
       instance_types = ["t3.small"]
       capacity_type  = "ON_DEMAND"
       disk_size      = 20
+          kubernetes_version = "1.34"
 
       tags = {
         Name    = "default"
