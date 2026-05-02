@@ -44,6 +44,32 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Check AWS secrets
+        shell: bash
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+        run: |
+          missing=0
+
+          if [ -z "${AWS_ACCESS_KEY_ID}" ]; then
+            echo "::error::Missing repository secret AWS_ACCESS_KEY_ID"
+            missing=1
+          fi
+
+          if [ -z "${AWS_SECRET_ACCESS_KEY}" ]; then
+            echo "::error::Missing repository secret AWS_SECRET_ACCESS_KEY"
+            missing=1
+          fi
+
+          if [[ "${AWS_ACCESS_KEY_ID}" == ASIA* && -z "${AWS_SESSION_TOKEN}" ]]; then
+            echo "::error::AWS_ACCESS_KEY_ID starts with ASIA, so AWS_SESSION_TOKEN is required"
+            missing=1
+          fi
+
+          exit "${missing}"
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -81,6 +107,32 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Check AWS secrets
+        shell: bash
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+        run: |
+          missing=0
+
+          if [ -z "${AWS_ACCESS_KEY_ID}" ]; then
+            echo "::error::Missing repository secret AWS_ACCESS_KEY_ID"
+            missing=1
+          fi
+
+          if [ -z "${AWS_SECRET_ACCESS_KEY}" ]; then
+            echo "::error::Missing repository secret AWS_SECRET_ACCESS_KEY"
+            missing=1
+          fi
+
+          if [[ "${AWS_ACCESS_KEY_ID}" == ASIA* && -z "${AWS_SESSION_TOKEN}" ]]; then
+            echo "::error::AWS_ACCESS_KEY_ID starts with ASIA, so AWS_SESSION_TOKEN is required"
+            missing=1
+          fi
+
+          exit "${missing}"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
