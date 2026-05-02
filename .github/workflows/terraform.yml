@@ -1,74 +1,112 @@
-name: Terraform — Project Bedrock CI/CD
+name: Terraform - Project Bedrock CI/CD
 
 on:
   pull_request:
     paths:
-      - 'terraform/**'
-      - '.github/workflows/**'
+      - "terraform/**"
+      - "!terraform/grading.json"
+      - "!terraform/grading .json"
+      - "lambda/**"
+      - "k8s/**"
+      - ".github/workflows/terraform.yml"
   push:
-    branches: [ main ]
+    branches: [main]
+    paths:
+      - "terraform/**"
+      - "!terraform/grading.json"
+      - "!terraform/grading .json"
+      - "lambda/**"
+      - "k8s/**"
+      - ".github/workflows/terraform.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: terraform-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: us-east-1
+  TF_WORKING_DIR: terraform
+  TERRAFORM_VERSION: 1.14.5
+  ASSETS_BUCKET_SUFFIX: alt-soe-025-1334
+  EKS_CLUSTER_NAME: project-bedrock-cluster
 
 jobs:
   plan:
-    name: PR Plan
+    name: Terraform plan
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.14.5
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
 
-      - name: Terraform Init & Plan
-        working-directory: terraform
-        run: |
-          # Clean cached provider/module files
-          rm -rf .terraform
-          rm -f .terraform.lock.hcl
-          terraform init -input=false
-          terraform plan -var="assets_bucket_suffix=alt-soe-025-1334"
+      - name: Terraform init
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform init -input=false
+
+      - name: Terraform validate
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform validate -no-color
+
+      - name: Terraform plan
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform plan -input=false -no-color -var="assets_bucket_suffix=${ASSETS_BUCKET_SUFFIX}"
 
   apply:
-    name: Apply on merge
+    name: Terraform apply and deploy
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-region: us-east-1
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.14.5
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
 
-      - name: Terraform Apply
-        working-directory: terraform
-        run: |
-          rm -rf .terraform
-          rm -f .terraform.lock.hcl
-          terraform init -input=false
-          terraform apply -auto-approve -input=false -var="assets_bucket_suffix=alt-soe-025-1334"
+      - name: Terraform init
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform init -input=false
+
+      - name: Terraform validate
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform validate -no-color
+
+      - name: Terraform apply
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform apply -auto-approve -input=false -var="assets_bucket_suffix=${ASSETS_BUCKET_SUFFIX}"
 
       - name: Write grading.json
-        working-directory: terraform
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        working-directory: ${{ env.TF_WORKING_DIR }}
         run: |
           terraform output -json > grading.json
           git config user.name "github-actions[bot]"
@@ -79,14 +117,12 @@ jobs:
 
       - name: Install kubectl
         run: |
-          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          curl -fsSLO "https://dl.k8s.io/release/$(curl -fsSL https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
           chmod +x kubectl
           sudo mv kubectl /usr/local/bin/
 
       - name: Update kubeconfig
-        run: |
-          aws eks update-kubeconfig --region us-east-1 --name project-bedrock-cluster
+        run: aws eks update-kubeconfig --region "${AWS_REGION}" --name "${EKS_CLUSTER_NAME}"
 
       - name: Deploy k8s manifests
-        run: |
-          kubectl apply -f k8s/ --recursive
+        run: kubectl apply -f k8s/ --recursive
